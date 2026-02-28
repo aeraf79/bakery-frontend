@@ -16,6 +16,98 @@ import "../pages/Favouritesdropdown.css";
 import QuickViewModal from "../pages/Quickviewmodal";
 import "../pages/Quickviewmodal.css";
 
+// ─── Offer Carousel Images ────────────────────────────────────────────────────
+// Add your own images here — 4, 5, or any number all work correctly
+const OFFER_CAROUSEL_IMAGES = [
+  { src: 'https://i.ibb.co/wrLpH7s1/b1.jpg', alt: 'Slide 1' },
+  { src: 'https://i.ibb.co/qM4s0B9m/b3.jpg', alt: 'Slide 2' },
+  { src: 'https://i.ibb.co/211sVSQq/b2.jpg', alt: 'Slide 3' },
+  { src: 'https://i.ibb.co/TDPq5zt9/b4.jpg', alt: 'Slide 4' },
+];
+
+// ─── Offer Carousel Component ─────────────────────────────────────────────────
+const OfferCarousel = () => {
+  const [current, setCurrent]   = useState(0);
+  const timerRef                = useRef(null);
+  // useRef keeps the latest index accessible inside setInterval without stale closure
+  const currentRef              = useRef(0);
+
+  useEffect(() => { currentRef.current = current; }, [current]);
+
+  const startAutoPlay = () => {
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      const next = (currentRef.current + 1) % OFFER_CAROUSEL_IMAGES.length;
+      currentRef.current = next;
+      setCurrent(next);
+    }, 3000);
+  };
+
+  useEffect(() => {
+    startAutoPlay();
+    return () => clearInterval(timerRef.current);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const goTo = (index) => {
+    // Works for any number of slides — both forward and backward wrap correctly
+    const next =
+      ((index % OFFER_CAROUSEL_IMAGES.length) + OFFER_CAROUSEL_IMAGES.length) %
+      OFFER_CAROUSEL_IMAGES.length;
+    currentRef.current = next;
+    setCurrent(next);
+    startAutoPlay(); // reset auto-play timer on manual nav
+  };
+
+  return (
+    <div className="offer-carousel">
+
+      {/* All slides stacked — only .active is visible */}
+      {OFFER_CAROUSEL_IMAGES.map((img, i) => (
+        <div
+          key={i}
+          className={`offer-carousel__slide${i === current ? " active" : ""}`}
+        >
+          <img src={img.src} alt={img.alt} />
+        </div>
+      ))}
+
+      {/* Left gradient overlay — blends into the dark banner */}
+      <div className="offer-carousel__overlay" />
+
+      {/* Prev */}
+      <button
+        className="offer-carousel__ctrl offer-carousel__ctrl--prev"
+        onClick={() => goTo(current - 1)}
+        aria-label="Previous slide"
+      >
+        <ChevronLeft size={20} />
+      </button>
+
+      {/* Next */}
+      <button
+        className="offer-carousel__ctrl offer-carousel__ctrl--next"
+        onClick={() => goTo(current + 1)}
+        aria-label="Next slide"
+      >
+        <ChevronRight size={20} />
+      </button>
+
+      {/* Dot indicators — one per image, auto-generated */}
+      <div className="offer-carousel__dots">
+        {OFFER_CAROUSEL_IMAGES.map((_, i) => (
+          <button
+            key={i}
+            className={`offer-carousel__dot${i === current ? " active" : ""}`}
+            onClick={() => goTo(i)}
+            aria-label={`Go to slide ${i + 1}`}
+          />
+        ))}
+      </div>
+
+    </div>
+  );
+};
+
 // ─── Countdown Hook ─────────────────────────────────────────────────────────
 const useCountdown = () => {
   const [time, setTime] = useState({ h: "08", m: "45", s: "30" });
@@ -177,12 +269,12 @@ const UserPanel = () => {
   };
 
   const handleFavCountChange = (productId) => {
-  setFavouritedIds(prev => {
-    const next = new Set(prev);
-    next.delete(productId);
-    return next;
-  });
-};
+    setFavouritedIds(prev => {
+      const next = new Set(prev);
+      next.delete(productId);
+      return next;
+    });
+  };
 
   const fetchProducts = async () => {
     setLoading(true); setError(""); setApiStatus("Connecting to API...");
@@ -359,7 +451,6 @@ const UserPanel = () => {
       <nav className={`user-nav ${scrolled ? "nav-scrolled" : ""}`}>
         <div className="nav-container">
           <div className="logo" onClick={() => navigate("/userpanel")}>Maison Dorée</div>
-
           <div className="nav-actions">
             <div className="search-bar desktop-search">
               <Search size={18} />
@@ -367,11 +458,10 @@ const UserPanel = () => {
               {searchQuery && <button className="clear-search" onClick={() => setSearchQuery("")}><X size={16} /></button>}
             </div>
             <FavouritesDropdown
-  onAction={handleFavDropdownAction}
-  favouritedIds={favouritedIds}
-  onCountChange={handleFavCountChange}
-/>
-
+              onAction={handleFavDropdownAction}
+              favouritedIds={favouritedIds}
+              onCountChange={handleFavCountChange}
+            />
             <button className="cart-btn" onClick={() => navigate("/cart")}>
               <ShoppingCart size={28} />
               {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
@@ -477,7 +567,9 @@ const UserPanel = () => {
           <div className="trust-item"><Clock size={22} /><div><strong>Same Day</strong><span>Order before 12 PM</span></div></div>
         </div>
 
-        {/* ═══ OFFER BANNER ═══════════════════════════════════════════════ */}
+        {/* ═══ OFFER BANNER ═══════════════════════════════════════════════
+            Only change from your original: <div className="hero-image"> replaced with <OfferCarousel />
+        ════════════════════════════════════════════════════════════════ */}
         <div className="hero-offer-banner">
           <div className="hero-banner-content">
             <span className="hero-badge">🔥 LIMITED TIME OFFER</span>
@@ -497,9 +589,10 @@ const UserPanel = () => {
               <span className="floating-item">🍰</span>
             </div>
           </div>
-          <div className="hero-image">
-            <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1200&auto=format&fit=crop" alt="Freshly baked pastries" />
-          </div>
+
+          {/* ── CAROUSEL replaces the old static <div className="hero-image"> ── */}
+          <OfferCarousel />
+
         </div>
 
         {/* ═══ CATEGORIES ═════════════════════════════════════════════════ */}
@@ -620,16 +713,11 @@ const UserPanel = () => {
                           : <img src={getFallbackImage(product.category)} alt={product.name} style={{ objectFit: "cover" }} />
                         }
                       </div>
-
                       {product.stockQuantity <= 5 && product.stockQuantity > 0 && <span className="low-stock-badge">Low Stock</span>}
                       {!product.isAvailable && <span className="out-of-stock-badge">Out of Stock</span>}
-
-                      {/* ✅ QUICK VIEW overlay — UNCHANGED */}
                       <div className="quick-view-overlay" onClick={(e) => { e.stopPropagation(); setQuickViewProduct(product); }}>
                         <span className="quick-view-text">QUICK VIEW</span>
                       </div>
-
-                      {/* ✅ Favourite button */}
                       <button
                         className={`favourite-btn ${favouritedIds.has(product.productId) ? "favourited" : ""}`}
                         onClick={(e) => handleToggleFavourite(e, product)}
@@ -639,7 +727,6 @@ const UserPanel = () => {
                         <Heart size={20} style={{ fill: favouritedIds.has(product.productId) ? "#ef4444" : "none", color: favouritedIds.has(product.productId) ? "#ef4444" : "currentColor", transition: "all 0.2s" }} />
                       </button>
                     </div>
-
                     <div className="product-info">
                       <div className="product-category">{product.category}</div>
                       <h3 className="product-name">{product.name}</h3>
@@ -662,7 +749,6 @@ const UserPanel = () => {
                   </div>
                 ))}
               </div>
-
               {hasMore && (
                 <div className="load-more-container">
                   <button className="load-more-btn" onClick={loadMoreProducts} disabled={loadingMore}>
@@ -731,8 +817,6 @@ const UserPanel = () => {
               </div>
             ))}
           </div>
-
-          {/* Mini offer strips */}
           <div className="mini-offers">
             <div className="mini-offer-card">
               <div className="mini-offer-icon">🥖</div>

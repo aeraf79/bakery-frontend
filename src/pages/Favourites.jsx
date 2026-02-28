@@ -120,8 +120,8 @@ const Favourites = () => {
 
   const getFallbackImage = (category) => {
     const map = {
-      'Breads': 'https://placehold.co/300x300/8B4513/FFFFFF?text=Bread',
-      'Bread':  'https://placehold.co/300x300/8B4513/FFFFFF?text=Bread',
+      'Breads':   'https://placehold.co/300x300/8B4513/FFFFFF?text=Bread',
+      'Bread':    'https://placehold.co/300x300/8B4513/FFFFFF?text=Bread',
       'Pastries': 'https://placehold.co/300x300/A0522D/FFFFFF?text=Pastry',
       'Cookies':  'https://placehold.co/300x300/D2691E/FFFFFF?text=Cookie',
       'Cakes':    'https://placehold.co/300x300/CD853F/FFFFFF?text=Cake',
@@ -130,10 +130,11 @@ const Favourites = () => {
     return map[category] || 'https://placehold.co/300x300/8B4513/FFFFFF?text=Product';
   };
 
+  // ── FIX: INR currency ──
   const formatPrice = (price) => {
-    if (!price) return '$0.00';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency', currency: 'USD', minimumFractionDigits: 2
+    if (!price && price !== 0) return '₹0.00';
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency', currency: 'INR', minimumFractionDigits: 2
     }).format(price);
   };
 
@@ -208,7 +209,7 @@ const Favourites = () => {
               <div
                 key={fav.favouriteId}
                 className="fav-product-card"
-                
+                onClick={() => navigate(`/product/${fav.productId}`)}
                 style={{ animationDelay: `${index * 0.06}s` }}
               >
                 {/* Image */}
@@ -221,7 +222,6 @@ const Favourites = () => {
                   {!fav.isAvailable && (
                     <div className="fav-card-unavailable-overlay">Out of Stock</div>
                   )}
-                  {/* Remove button */}
                   <button
                     className="fav-card-remove-btn"
                     onClick={() => handleRemove(fav.favouriteId, fav.productName)}
@@ -239,8 +239,6 @@ const Favourites = () => {
                 <div className="fav-card-info">
                   <span className="fav-card-category">{fav.productCategory}</span>
                   <h3 className="fav-card-name">{fav.productName}</h3>
-
-                 
 
                   <div className="fav-card-footer">
                     <div className="fav-card-price">

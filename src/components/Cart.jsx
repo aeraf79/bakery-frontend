@@ -172,14 +172,12 @@ const Cart = () => {
           navigate('/login');
           return;
         }
-        // Only parse body if there is one (backend returns 200 with empty body)
         if (response.status !== 204) {
           const errData = await response.json().catch(() => null);
           if (errData) throw new Error(errData?.error || errData?.message || 'Failed to clear cart');
         }
       }
 
-      // Backend returns 200 with no body — reset cart state manually
       setCartData(prev => ({
         cartId: prev?.cartId,
         userId: prev?.userId,
@@ -220,6 +218,16 @@ const Cart = () => {
     setTimeout(() => toast.remove(), 3000);
   };
 
+  // ── FIX: Use INR (₹) to match backend prices and Razorpay currency ──
+  const formatPrice = (price) => {
+    const numPrice = typeof price === 'string' ? parseFloat(price) : (price || 0);
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2
+    }).format(numPrice);
+  };
+
   // Use backend's pre-calculated totalAmount (falls back to manual if missing)
   const calculateSubtotal = () => {
     if (!cartData) return 0;
@@ -230,22 +238,9 @@ const Cart = () => {
     return cartData.items.reduce((sum, item) => sum + parseFloat(item.subtotal || 0), 0);
   };
 
-  const calculateTax = () => {
-    return calculateSubtotal() * 0.08;
-  };
+  const calculateTax = () => calculateSubtotal() * 0.08;
 
-  const calculateTotal = () => {
-    return calculateSubtotal() + calculateTax();
-  };
-
-  const formatPrice = (price) => {
-    const numPrice = typeof price === 'string' ? parseFloat(price) : (price || 0);
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(numPrice);
-  };
+  const calculateTotal = () => calculateSubtotal() + calculateTax();
 
   const getFallbackImage = (category) => {
     const fallbacks = {

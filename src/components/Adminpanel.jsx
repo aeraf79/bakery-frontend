@@ -30,6 +30,43 @@ const STATUS_CLS = {
 };
 const PAY_CLS = { PENDING: "p-pending", PAID: "p-paid", FAILED: "p-failed", REFUNDED: "p-refunded" };
 const CATEGORIES = ["Breads","Pastries","Cakes","Cookies","Muffins","Vegan","Gluten-Free","Seasonal","Beverages","Other"];
+const PAGE_SIZE = 10;
+
+// ─── PAGINATION COMPONENT ───────────────────────────────────────────────────
+const Pagination = ({ page, total, pageSize = PAGE_SIZE, onChange }) => {
+  const totalPages = Math.ceil(total / pageSize);
+  if (totalPages <= 1) return null;
+
+  const pages = [];
+  // Always show first, last, current ±1, with ellipsis
+  const range = new Set([1, totalPages, page, page - 1, page + 1].filter(p => p >= 1 && p <= totalPages));
+  const sorted = [...range].sort((a, b) => a - b);
+
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0 && sorted[i] - sorted[i - 1] > 1) pages.push("...");
+    pages.push(sorted[i]);
+  }
+
+  const start = (page - 1) * pageSize + 1;
+  const end   = Math.min(page * pageSize, total);
+
+  return (
+    <div className="ap-pagination">
+      <span className="pag-info">Showing {start}–{end} of {total}</span>
+      <div className="pag-controls">
+        <button className="pag-btn" onClick={() => onChange(page - 1)} disabled={page === 1}>‹</button>
+        {pages.map((p, i) =>
+          p === "..." ? (
+            <span key={`el-${i}`} className="pag-ellipsis">…</span>
+          ) : (
+            <button key={p} className={`pag-btn${p === page ? " pag-active" : ""}`} onClick={() => onChange(p)}>{p}</button>
+          )
+        )}
+        <button className="pag-btn" onClick={() => onChange(page + 1)} disabled={page === totalPages}>›</button>
+      </div>
+    </div>
+  );
+};
 
 // ─── TOAST ──────────────────────────────────────────────────────────────────
 const ToastStack = ({ toasts, remove }) => (
@@ -165,7 +202,7 @@ const ProductModal = ({ product, onClose, onSave }) => {
 const UserModal = ({ user, onClose, onSave }) => {
   const [form, setForm] = useState({
     fullName: user.fullName || "", email: user.email || "",
-    phoneNumber: user.phoneNumber || "", role: user.role || "USER",
+    phoneNumber: user.phoneNumber || "",
   });
   const [busy, setBusy] = useState(false);
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -173,8 +210,10 @@ const UserModal = ({ user, onClose, onSave }) => {
   const submit = async () => {
     setBusy(true);
     try {
+      // Send role unchanged — admin cannot change roles
+      const payload = { ...form, role: user.role };
       const res = await fetch(`${API}/users/put/${user.userId}`, {
-        method: "PUT", headers: hdr(), body: JSON.stringify(form),
+        method: "PUT", headers: hdr(), body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(await res.text());
       onSave(await res.json());
@@ -191,12 +230,6 @@ const UserModal = ({ user, onClose, onSave }) => {
           <Field label="Full Name"><input value={form.fullName} onChange={(e) => setF("fullName", e.target.value)} /></Field>
           <Field label="Email"><input type="email" value={form.email} onChange={(e) => setF("email", e.target.value)} /></Field>
           <Field label="Phone Number"><input value={form.phoneNumber} onChange={(e) => setF("phoneNumber", e.target.value)} /></Field>
-          <Field label="Role">
-            <select value={form.role} onChange={(e) => setF("role", e.target.value)}>
-              <option value="USER">USER</option>
-              <option value="ADMIN">ADMIN</option>
-            </select>
-          </Field>
         </div>
         <div className="ap-mfoot">
           <button className="ap-btn ap-btn-ghost" onClick={onClose}>Cancel</button>
@@ -211,27 +244,21 @@ const UserModal = ({ user, onClose, onSave }) => {
 
 // ─── ORDER DETAIL MODAL ─────────────────────────────────────────────────────
 const OrderModal = ({ order, onClose, onUpdate }) => {
-  const [status, setStatus]     = useState(order.status);
+  const [status, setStatus]       = useState(order.status);
   const [payStatus, setPayStatus] = useState(order.paymentStatus);
-  const [busy, setBusy]         = useState(false);
+  const [busy, setBusy]           = useState(false);
 
-   const submit = async () => {
+  const submit = async () => {
     setBusy(true);
     try {
-      // Call the new unified status update endpoint
       const res = await fetch(`${API}/orders/${order.orderId}/status`, {
-        method: "PUT",
-        headers: hdr(),
+        method: "PUT", headers: hdr(),
         body: JSON.stringify({ status, paymentStatus: payStatus }),
       });
       if (!res.ok) throw new Error(await res.text());
-      const updated = await res.json();
-      onUpdate(updated);
-    } catch (err) {
-      alert("Error: " + err.message);
-    } finally {
-      setBusy(false);
-    }
+      onUpdate(await res.json());
+    } catch (err) { alert("Error: " + err.message); }
+    finally { setBusy(false); }
   };
 
   return (
@@ -245,13 +272,11 @@ const OrderModal = ({ order, onClose, onUpdate }) => {
           <button className="ap-mclose" onClick={onClose}>×</button>
         </div>
         <div className="ap-mbody">
-          {/* Badges */}
           <div className="ord-badge-row">
             <span className={`status-bdg ${STATUS_CLS[order.status]}`}>{order.status}</span>
             <span className={`pay-bdg ${PAY_CLS[order.paymentStatus]}`}>{order.paymentStatus}</span>
             {order.paymentMethod && <span className="method-bdg">💳 {order.paymentMethod}</span>}
           </div>
-
           <div className="ord-two-col">
             <div className="ord-info-card">
               <h4>🧑 Customer</h4>
@@ -266,8 +291,6 @@ const OrderModal = ({ order, onClose, onUpdate }) => {
               {order.orderNotes && <p className="ord-notes">📝 {order.orderNotes}</p>}
             </div>
           </div>
-
-          {/* Items */}
           <div className="ord-items-section">
             <h4>🛒 Order Items ({order.orderItems?.length ?? 0})</h4>
             <table className="ord-items-tbl">
@@ -292,8 +315,6 @@ const OrderModal = ({ order, onClose, onUpdate }) => {
               </tbody>
             </table>
           </div>
-
-          {/* Totals */}
           <div className="ord-totals">
             <div className="tot-row"><span>Subtotal</span><span>{fmt(order.totalAmount)}</span></div>
             {parseFloat(order.discountAmount) > 0 && (
@@ -302,8 +323,6 @@ const OrderModal = ({ order, onClose, onUpdate }) => {
             <div className="tot-row"><span>Shipping</span><span>{parseFloat(order.shippingFee) === 0 ? "Free" : fmt(order.shippingFee)}</span></div>
             <div className="tot-row tot-final"><span>Total</span><span>{fmt(order.finalAmount)}</span></div>
           </div>
-
-          {/* Status update */}
           <div className="ord-update-strip">
             <div className="form-g2">
               <Field label="Order Status">
@@ -383,10 +402,10 @@ const Field = ({ label, error, children }) => (
 //  ADMIN PANEL
 // ══════════════════════════════════════════════════════════════════════════════
 export default function AdminPanel() {
-  const navigate   = useNavigate();
-  const [tab, setTab]           = useState("dashboard");
+  const navigate    = useNavigate();
+  const [tab, setTab]             = useState("dashboard");
   const [adminName, setAdminName] = useState("Admin");
-  const [sideOpen, setSideOpen] = useState(false);
+  const [sideOpen, setSideOpen]   = useState(false);
 
   // Toast
   const [toasts, setToasts] = useState([]);
@@ -408,15 +427,16 @@ export default function AdminPanel() {
   const logout = () => { localStorage.clear(); navigate("/"); };
 
   // ── PRODUCTS ────────────────────────────────────────────────────────────
-  const [products,  setProducts]   = useState([]);
-  const [pLoad,     setPLoad]      = useState(false);
-  const [pSearch,   setPSearch]    = useState("");
-  const [pCat,      setPCat]       = useState("all");
-  const [pModal,    setPModal]     = useState(null);
-  const [stockModal,setStockModal] = useState(null);
-  const [lowStock,  setLowStock]   = useState([]);
-  const [pStats,    setPStats]     = useState({});
-  const [delProd,   setDelProd]    = useState(null);
+  const [products,   setProducts]  = useState([]);
+  const [pLoad,      setPLoad]     = useState(false);
+  const [pSearch,    setPSearch]   = useState("");
+  const [pCat,       setPCat]      = useState("all");
+  const [pModal,     setPModal]    = useState(null);
+  const [stockModal, setStockModal]= useState(null);
+  const [lowStock,   setLowStock]  = useState([]);
+  const [pStats,     setPStats]    = useState({});
+  const [delProd,    setDelProd]   = useState(null);
+  const [pPage,      setPPage]     = useState(1);
 
   const fetchProducts = useCallback(async () => {
     setPLoad(true);
@@ -454,11 +474,15 @@ export default function AdminPanel() {
   };
 
   const filteredP = products.filter((p) => {
-    const cat = pCat === "all" || p.category === pCat;
+    const cat  = pCat === "all" || p.category === pCat;
     const srch = !pSearch || p.name?.toLowerCase().includes(pSearch.toLowerCase()) || p.category?.toLowerCase().includes(pSearch.toLowerCase());
     return cat && srch;
   });
-  const pCats = ["all", ...new Set(products.map((p) => p.category).filter(Boolean))];
+  // Reset page when filter changes
+  useEffect(() => { setPPage(1); }, [pSearch, pCat]);
+
+  const pagedP  = filteredP.slice((pPage - 1) * PAGE_SIZE, pPage * PAGE_SIZE);
+  const pCats   = ["all", ...new Set(products.map((p) => p.category).filter(Boolean))];
 
   // ── ORDERS ──────────────────────────────────────────────────────────────
   const [orders,  setOrders]  = useState([]);
@@ -466,11 +490,12 @@ export default function AdminPanel() {
   const [oSearch, setOSearch] = useState("");
   const [oStatus, setOStatus] = useState("all");
   const [oModal,  setOModal]  = useState(null);
+  const [oPage,   setOPage]   = useState(1);
 
   const fetchOrders = useCallback(async () => {
     setOLoad(true);
     try {
-      const res = await fetch(`${API}/orders`, { headers: hdr() });
+      const res  = await fetch(`${API}/orders`, { headers: hdr() });
       const data = res.ok ? await res.json() : [];
       setOrders(Array.isArray(data) ? data : []);
     } catch { toast("Failed to load orders", "error"); }
@@ -482,24 +507,33 @@ export default function AdminPanel() {
     const sr = !oSearch ||
       (o.orderNumber || "").toLowerCase().includes(oSearch.toLowerCase()) ||
       (o.customerEmail || "").toLowerCase().includes(oSearch.toLowerCase()) ||
-      (o.shippingName || "").toLowerCase().includes(oSearch.toLowerCase());
+      (o.shippingName  || "").toLowerCase().includes(oSearch.toLowerCase());
     return st && sr;
   });
+  useEffect(() => { setOPage(1); }, [oSearch, oStatus]);
+  const pagedO = filteredO.slice((oPage - 1) * PAGE_SIZE, oPage * PAGE_SIZE);
+
+  const REVENUE_STATUSES = new Set(["CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"]);
 
   const oStats = {
     total:     orders.length,
-    revenue:   orders.reduce((s, o) => s + parseFloat(o.finalAmount || 0), 0),
+    // Only count active/completed orders — exclude PENDING, CANCELLED, REFUNDED
+    revenue:   orders
+      .filter((o) => REVENUE_STATUSES.has(o.status))
+      .reduce((s, o) => s + parseFloat(o.finalAmount || 0), 0),
     pending:   orders.filter((o) => o.status === "PENDING").length,
     delivered: orders.filter((o) => o.status === "DELIVERED").length,
     cancelled: orders.filter((o) => o.status === "CANCELLED").length,
+    refunded:  orders.filter((o) => o.status === "REFUNDED").length,
   };
 
   // ── USERS ───────────────────────────────────────────────────────────────
-  const [users,   setUsers]   = useState([]);
-  const [uLoad,   setULoad]   = useState(false);
-  const [uSearch, setUSearch] = useState("");
-  const [uModal,  setUModal]  = useState(null);
-  const [delUsr,  setDelUsr]  = useState(null);
+  const [users,   setUsers]  = useState([]);
+  const [uLoad,   setULoad]  = useState(false);
+  const [uSearch, setUSearch]= useState("");
+  const [uModal,  setUModal] = useState(null);
+  const [delUsr,  setDelUsr] = useState(null);
+  const [uPage,   setUPage]  = useState(1);
 
   const fetchUsers = useCallback(async () => {
     setULoad(true);
@@ -525,6 +559,8 @@ export default function AdminPanel() {
     u.fullName?.toLowerCase().includes(uSearch.toLowerCase()) ||
     u.email?.toLowerCase().includes(uSearch.toLowerCase())
   );
+  useEffect(() => { setUPage(1); }, [uSearch]);
+  const pagedU = filteredU.slice((uPage - 1) * PAGE_SIZE, uPage * PAGE_SIZE);
 
   // Load on tab change
   useEffect(() => {
@@ -534,23 +570,26 @@ export default function AdminPanel() {
     if (tab === "users")     { fetchUsers(); return; }
   }, [tab]);
 
-  // Dashboard metrics
+  // Dashboard metrics — use pStats from API where available, fall back to local counts
   const dash = {
-    products: pStats.totalProducts    ?? products.length,
-    available:pStats.availableProducts ?? products.filter(p=>p.isAvailable).length,
-    lowCnt:   pStats.lowStockCount     ?? lowStock.length,
-    revenue:  oStats.revenue,
-    orders:   oStats.total,
-    pending:  oStats.pending,
-    users:    users.length,
-    admins:   users.filter(u=>u.role==="ADMIN").length,
+    products:  pStats.totalProducts     ?? products.length,
+    available: pStats.availableProducts ?? products.filter(p => p.isAvailable).length,
+    lowCnt:    pStats.lowStockCount     ?? lowStock.length,
+    revenue:   oStats.revenue,
+    orders:    oStats.total,
+    pending:   oStats.pending,
+    cancelled: oStats.cancelled,
+    refunded:  oStats.refunded,
+    users:     users.length,
+    admins:    users.filter(u => u.role === "ADMIN").length,
   };
 
+  // ── Nav items: badge = pending orders (not low-stock) on Products; pending on Orders ──
   const NAV_ITEMS = [
-    { key:"dashboard", icon:"◈",  label:"Dashboard" },
-    { key:"products",  icon:"🥐", label:"Products",  badge: dash.lowCnt || 0 },
-    { key:"orders",    icon:"📦", label:"Orders",    badge: dash.pending || 0 },
-    { key:"users",     icon:"👥", label:"Users" },
+    { key: "dashboard", icon: "◈",  label: "Dashboard" },
+    { key: "products",  icon: "🥐", label: "Products"  },            // no badge — low-stock is dashboard concern
+    { key: "orders",    icon: "📦", label: "Orders",   badge: dash.pending || 0 },
+    { key: "users",     icon: "👥", label: "Users" },
   ];
 
   // ── RENDER ──────────────────────────────────────────────────────────────
@@ -558,7 +597,7 @@ export default function AdminPanel() {
     <div className={`ap-shell ${sideOpen ? "ap-side-open" : ""}`}>
       <ToastStack toasts={toasts} remove={removeToast} />
 
-      {/* ═══ SIDEBAR ════════════════════════════════════════════════════ */}
+      {/* ═══ SIDEBAR ═══════════════════════════════════════════════════ */}
       <aside className="ap-sidebar">
         <div className="ap-brand">
           <div className="ap-brand-icon">🥐</div>
@@ -590,7 +629,7 @@ export default function AdminPanel() {
         </div>
       </aside>
 
-      {/* ═══ MAIN ═══════════════════════════════════════════════════════ */}
+      {/* ═══ MAIN ══════════════════════════════════════════════════════ */}
       <div className="ap-main">
 
         {/* Topbar */}
@@ -608,14 +647,14 @@ export default function AdminPanel() {
 
         <div className="ap-body">
 
-          {/* ══════ DASHBOARD ══════════════════════════════════════════ */}
+          {/* ══════ DASHBOARD ════════════════════════════════════════ */}
           {tab === "dashboard" && (
             <div className="ap-section">
               <div className="dash-greeting">
                 <div>
                   <h1>Good day, {adminName.split(" ")[0]} 👋</h1>
                   <p className="dash-date">
-                    {new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
+                    {new Date().toLocaleDateString("en-IN", { weekday:"long", day:"numeric", month:"long", year:"numeric" })}
                   </p>
                 </div>
               </div>
@@ -627,15 +666,15 @@ export default function AdminPanel() {
                   <div>
                     <div className="kpi-val">{dash.products}</div>
                     <div className="kpi-lbl">Total Products</div>
-                    <div className="kpi-hint">{dash.available} available</div>
+                    <div className="kpi-hint">{dash.available} available · {dash.lowCnt} low stock</div>
                   </div>
                 </div>
                 <div className="kpi-card kpi-gold" onClick={() => setTab("orders")}>
                   <div className="kpi-icon-wrap">💰</div>
                   <div>
                     <div className="kpi-val kpi-val-sm">{fmt(dash.revenue)}</div>
-                    <div className="kpi-lbl">Total Revenue</div>
-                    <div className="kpi-hint">{dash.orders} orders</div>
+                    <div className="kpi-lbl">Confirmed Revenue</div>
+                    <div className="kpi-hint">{dash.orders} orders{(dash.cancelled + (dash.refunded||0)) > 0 && <span className="kpi-excluded"> · {dash.cancelled + (dash.refunded||0)} cancelled/refunded excluded</span>}</div>
                   </div>
                 </div>
                 <div className="kpi-card kpi-amber" onClick={() => setTab("orders")}>
@@ -657,54 +696,18 @@ export default function AdminPanel() {
               </div>
 
               <div className="dash-row">
-                {/* Low Stock */}
-                <div className="dash-card">
-                  <div className="dash-card-hd">
-                    <h3>⚠ Low Stock Alert</h3>
-                    <button className="link-btn" onClick={() => setTab("products")}>View All →</button>
-                  </div>
-                  {lowStock.length === 0
-                    ? <div className="dash-empty">All products well-stocked ✓</div>
-                    : <div className="ls-list">
-                        {lowStock.slice(0, 7).map((p) => (
-                          <div key={p.productId} className="ls-item">
-                            <div className="ls-left">
-                              {p.imageUrl
-                                ? <img src={p.imageUrl} alt="" className="ls-thumb" onError={(e)=>e.target.style.display='none'} />
-                                : <div className="ls-thumb-ph">{p.name?.[0]}</div>}
-                              <span className="ls-name">{p.name}</span>
-                            </div>
-                            <span className={`ls-qty ${p.stockQuantity <= 3 ? "ls-danger" : "ls-warn"}`}>
-                              {p.stockQuantity} left
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                  }
-                </div>
+                {/* Low Stock — paginated 10 per page */}
+                <DashLowStock
+                  lowStock={lowStock}
+                  onViewAll={() => setTab("products")}
+                />
 
-                {/* Recent Orders */}
-                <div className="dash-card">
-                  <div className="dash-card-hd">
-                    <h3>📦 Recent Orders</h3>
-                    <button className="link-btn" onClick={() => setTab("orders")}>View All →</button>
-                  </div>
-                  {orders.length === 0
-                    ? <div className="dash-empty">No orders yet</div>
-                    : orders.slice(0, 6).map((o) => (
-                        <div key={o.orderId} className="ro-item" onClick={() => { setTab("orders"); setOModal(o); }}>
-                          <div className="ro-left">
-                            <div className="ro-num">#{o.orderNumber}</div>
-                            <div className="ro-cust">{o.shippingName || o.customerName || "—"}</div>
-                          </div>
-                          <div className="ro-right">
-                            <span className={`status-bdg ${STATUS_CLS[o.status]}`}>{o.status}</span>
-                            <div className="ro-amt">{fmt(o.finalAmount)}</div>
-                          </div>
-                        </div>
-                      ))
-                  }
-                </div>
+                {/* Recent Orders — paginated 10 per page */}
+                <DashRecentOrders
+                  orders={orders}
+                  onViewAll={() => setTab("orders")}
+                  onOpenOrder={(o) => { setTab("orders"); setOModal(o); }}
+                />
               </div>
 
               {/* Order Breakdown */}
@@ -732,7 +735,7 @@ export default function AdminPanel() {
             </div>
           )}
 
-          {/* ══════ PRODUCTS ═══════════════════════════════════════════ */}
+          {/* ══════ PRODUCTS ══════════════════════════════════════════ */}
           {tab === "products" && (
             <div className="ap-section">
               <div className="sec-head">
@@ -766,64 +769,67 @@ export default function AdminPanel() {
               {pLoad
                 ? <div className="ap-loader-wrap"><div className="ap-loader" /></div>
                 : (
-                  <div className="ap-tbl-wrap">
-                    <table className="ap-tbl">
-                      <thead>
-                        <tr>
-                          <th>Product</th><th>Category</th><th>Price</th>
-                          <th>Stock</th><th>Available</th><th className="th-actions">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredP.length === 0
-                          ? <tr><td colSpan={6} className="tbl-empty">No products found</td></tr>
-                          : filteredP.map((p) => (
-                              <tr key={p.productId} className={!p.isAvailable ? "row-dim" : ""}>
-                                <td>
-                                  <div className="prod-cell">
-                                    {p.imageUrl
-                                      ? <img src={p.imageUrl} alt="" className="p-thumb" onError={(e) => e.target.style.display = "none"} />
-                                      : <div className="p-thumb-ph">{p.name?.[0]}</div>}
-                                    <div>
-                                      <div className="p-name">{p.name}</div>
-                                      <div className="p-meta">{p.unit || ""}{p.weight ? ` · ${p.weight}kg` : ""}</div>
+                  <>
+                    <div className="ap-tbl-wrap">
+                      <table className="ap-tbl">
+                        <thead>
+                          <tr>
+                            <th>Product</th><th>Category</th><th>Price</th>
+                            <th>Stock</th><th>Available</th><th className="th-actions">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pagedP.length === 0
+                            ? <tr><td colSpan={6} className="tbl-empty">No products found</td></tr>
+                            : pagedP.map((p) => (
+                                <tr key={p.productId} className={!p.isAvailable ? "row-dim" : ""}>
+                                  <td>
+                                    <div className="prod-cell">
+                                      {p.imageUrl
+                                        ? <img src={p.imageUrl} alt="" className="p-thumb" onError={(e) => e.target.style.display = "none"} />
+                                        : <div className="p-thumb-ph">{p.name?.[0]}</div>}
+                                      <div>
+                                        <div className="p-name">{p.name}</div>
+                                        <div className="p-meta">{p.unit || ""}{p.weight ? ` · ${p.weight}kg` : ""}</div>
+                                      </div>
                                     </div>
-                                  </div>
-                                </td>
-                                <td><span className="p-cat-tag">{p.category}</span></td>
-                                <td className="td-price">{fmt(p.price)}</td>
-                                <td>
-                                  <div className="stock-cell">
-                                    <span className={`stock-num ${p.stockQuantity <= 5 ? "sn-low" : p.stockQuantity <= 15 ? "sn-mid" : "sn-ok"}`}>
-                                      {p.stockQuantity}
-                                    </span>
-                                    <button className="icon-act" title="Update stock" onClick={() => setStockModal(p)}>📦</button>
-                                  </div>
-                                </td>
-                                <td>
-                                  <label className="ap-toggle">
-                                    <input type="checkbox" checked={!!p.isAvailable} onChange={() => toggleAvail(p)} />
-                                    <span className="ap-toggle-slider" />
-                                  </label>
-                                </td>
-                                <td>
-                                  <div className="acts">
-                                    <button className="icon-act act-edit" title="Edit" onClick={() => setPModal(p)}>✏</button>
-                                    <button className="icon-act act-del"  title="Delete" onClick={() => setDelProd(p)}>🗑</button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))
-                        }
-                      </tbody>
-                    </table>
-                  </div>
+                                  </td>
+                                  <td><span className="p-cat-tag">{p.category}</span></td>
+                                  <td className="td-price">{fmt(p.price)}</td>
+                                  <td>
+                                    <div className="stock-cell">
+                                      <span className={`stock-num ${p.stockQuantity <= 5 ? "sn-low" : p.stockQuantity <= 15 ? "sn-mid" : "sn-ok"}`}>
+                                        {p.stockQuantity}
+                                      </span>
+                                      <button className="icon-act" title="Update stock" onClick={() => setStockModal(p)}>📦</button>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <label className="ap-toggle">
+                                      <input type="checkbox" checked={!!p.isAvailable} onChange={() => toggleAvail(p)} />
+                                      <span className="ap-toggle-slider" />
+                                    </label>
+                                  </td>
+                                  <td>
+                                    <div className="acts">
+                                      <button className="icon-act act-edit" title="Edit" onClick={() => setPModal(p)}>✏</button>
+                                      <button className="icon-act act-del"  title="Delete" onClick={() => setDelProd(p)}>🗑</button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                    <Pagination page={pPage} total={filteredP.length} onChange={setPPage} />
+                  </>
                 )
               }
             </div>
           )}
 
-          {/* ══════ ORDERS ═════════════════════════════════════════════ */}
+          {/* ══════ ORDERS ════════════════════════════════════════════ */}
           {tab === "orders" && (
             <div className="ap-section">
               <div className="sec-head">
@@ -834,7 +840,6 @@ export default function AdminPanel() {
                 <button className="ap-btn ap-btn-ghost" onClick={fetchOrders}>↻ Refresh</button>
               </div>
 
-              {/* Mini KPIs */}
               <div className="o-kpi-row">
                 {[
                   { label:"Total",     val: oStats.total,     cls:"" },
@@ -868,58 +873,61 @@ export default function AdminPanel() {
               {oLoad
                 ? <div className="ap-loader-wrap"><div className="ap-loader" /></div>
                 : (
-                  <div className="ap-tbl-wrap">
-                    <table className="ap-tbl">
-                      <thead>
-                        <tr>
-                          <th>Order #</th><th>Customer</th><th>Items</th>
-                          <th>Amount</th><th>Payment</th><th>Status</th><th>Date</th><th className="th-actions">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredO.length === 0
-                          ? <tr><td colSpan={8} className="tbl-empty">No orders found</td></tr>
-                          : filteredO.map((o) => (
-                              <tr key={o.orderId}>
-                                <td><span className="ord-num">#{o.orderNumber}</span></td>
-                                <td>
-                                  <div className="usr-cell">
-                                    <div className="usr-av-sm">{initials(o.shippingName || o.customerName)}</div>
-                                    <div>
-                                      <div className="usr-name-s">{o.shippingName || o.customerName || "—"}</div>
-                                      <div className="usr-email-s">{o.customerEmail || "—"}</div>
+                  <>
+                    <div className="ap-tbl-wrap">
+                      <table className="ap-tbl">
+                        <thead>
+                          <tr>
+                            <th>Order #</th><th>Customer</th><th>Items</th>
+                            <th>Amount</th><th>Payment</th><th>Status</th><th>Date</th><th className="th-actions">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pagedO.length === 0
+                            ? <tr><td colSpan={8} className="tbl-empty">No orders found</td></tr>
+                            : pagedO.map((o) => (
+                                <tr key={o.orderId}>
+                                  <td><span className="ord-num">#{o.orderNumber}</span></td>
+                                  <td>
+                                    <div className="usr-cell">
+                                      <div className="usr-av-sm">{initials(o.shippingName || o.customerName)}</div>
+                                      <div>
+                                        <div className="usr-name-s">{o.shippingName || o.customerName || "—"}</div>
+                                        <div className="usr-email-s">{o.customerEmail || "—"}</div>
+                                      </div>
                                     </div>
-                                  </div>
-                                </td>
-                                <td><span className="items-cnt">{o.orderItems?.length ?? 0} items</span></td>
-                                <td className="td-price">{fmt(o.finalAmount)}</td>
-                                <td>
-                                  <span className={`pay-bdg ${PAY_CLS[o.paymentStatus]}`}>{o.paymentStatus}</span>
-                                  <div className="pay-method-s">{o.paymentMethod || "—"}</div>
-                                </td>
-                                <td><span className={`status-bdg ${STATUS_CLS[o.status]}`}>{o.status}</span></td>
-                                <td className="td-date">{fmtDate(o.createdAt)}</td>
-                                <td>
-                                  <button className="icon-act act-view" onClick={() => setOModal(o)} title="View Details">👁</button>
-                                </td>
-                              </tr>
-                            ))
-                        }
-                      </tbody>
-                    </table>
-                  </div>
+                                  </td>
+                                  <td><span className="items-cnt">{o.orderItems?.length ?? 0} items</span></td>
+                                  <td className="td-price">{fmt(o.finalAmount)}</td>
+                                  <td>
+                                    <span className={`pay-bdg ${PAY_CLS[o.paymentStatus]}`}>{o.paymentStatus}</span>
+                                    <div className="pay-method-s">{o.paymentMethod || "—"}</div>
+                                  </td>
+                                  <td><span className={`status-bdg ${STATUS_CLS[o.status]}`}>{o.status}</span></td>
+                                  <td className="td-date">{fmtDate(o.createdAt)}</td>
+                                  <td>
+                                    <button className="icon-act act-view" onClick={() => setOModal(o)} title="View Details">👁</button>
+                                  </td>
+                                </tr>
+                              ))
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                    <Pagination page={oPage} total={filteredO.length} onChange={setOPage} />
+                  </>
                 )
               }
             </div>
           )}
 
-          {/* ══════ USERS ══════════════════════════════════════════════ */}
+          {/* ══════ USERS ═════════════════════════════════════════════ */}
           {tab === "users" && (
             <div className="ap-section">
               <div className="sec-head">
                 <div>
                   <h2>Users</h2>
-                  <p className="sec-sub">{users.length} total · {users.filter(u=>u.role==="ADMIN").length} admins</p>
+                  <p className="sec-sub">{users.length} total · {users.filter(u => u.role === "ADMIN").length} admins</p>
                 </div>
                 <button className="ap-btn ap-btn-ghost" onClick={fetchUsers}>↻ Refresh</button>
               </div>
@@ -935,37 +943,40 @@ export default function AdminPanel() {
               {uLoad
                 ? <div className="ap-loader-wrap"><div className="ap-loader" /></div>
                 : (
-                  <div className="ap-tbl-wrap">
-                    <table className="ap-tbl">
-                      <thead>
-                        <tr><th>User</th><th>Email</th><th>Phone</th><th>Role</th><th className="th-actions">Actions</th></tr>
-                      </thead>
-                      <tbody>
-                        {filteredU.length === 0
-                          ? <tr><td colSpan={5} className="tbl-empty">No users found</td></tr>
-                          : filteredU.map((u) => (
-                              <tr key={u.userId} className={u.role === "ADMIN" ? "row-admin" : ""}>
-                                <td>
-                                  <div className="usr-cell">
-                                    <div className={`usr-av ${u.role==="ADMIN"?"usr-av-admin":""}`}>{initials(u.fullName)}</div>
-                                    <span className="usr-name-s">{u.fullName}</span>
-                                  </div>
-                                </td>
-                                <td className="usr-email-s">{u.email}</td>
-                                <td>{u.phoneNumber || "—"}</td>
-                                <td><span className={`role-tag ${u.role==="ADMIN"?"rt-admin":"rt-user"}`}>{u.role}</span></td>
-                                <td>
-                                  <div className="acts">
-                                    <button className="icon-act act-edit" onClick={() => setUModal(u)} title="Edit">✏</button>
-                                    <button className="icon-act act-del"  onClick={() => setDelUsr(u)}  title="Delete">🗑</button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))
-                        }
-                      </tbody>
-                    </table>
-                  </div>
+                  <>
+                    <div className="ap-tbl-wrap">
+                      <table className="ap-tbl">
+                        <thead>
+                          <tr><th>User</th><th>Email</th><th>Phone</th><th>Role</th><th className="th-actions">Actions</th></tr>
+                        </thead>
+                        <tbody>
+                          {pagedU.length === 0
+                            ? <tr><td colSpan={5} className="tbl-empty">No users found</td></tr>
+                            : pagedU.map((u) => (
+                                <tr key={u.userId} className={u.role === "ADMIN" ? "row-admin" : ""}>
+                                  <td>
+                                    <div className="usr-cell">
+                                      <div className={`usr-av ${u.role === "ADMIN" ? "usr-av-admin" : ""}`}>{initials(u.fullName)}</div>
+                                      <span className="usr-name-s">{u.fullName}</span>
+                                    </div>
+                                  </td>
+                                  <td className="usr-email-s">{u.email}</td>
+                                  <td>{u.phoneNumber || "—"}</td>
+                                  <td><span className={`role-tag ${u.role === "ADMIN" ? "rt-admin" : "rt-user"}`}>{u.role}</span></td>
+                                  <td>
+                                    <div className="acts">
+                                      <button className="icon-act act-edit" onClick={() => setUModal(u)} title="Edit">✏</button>
+                                      <button className="icon-act act-del"  onClick={() => setDelUsr(u)}  title="Delete">🗑</button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                    <Pagination page={uPage} total={filteredU.length} onChange={setUPage} />
+                  </>
                 )
               }
             </div>
@@ -974,7 +985,7 @@ export default function AdminPanel() {
         </div>{/* ap-body */}
       </div>{/* ap-main */}
 
-      {/* ═══ MODALS ═══════════════════════════════════════════════════════ */}
+      {/* ═══ MODALS ════════════════════════════════════════════════════ */}
       {(pModal === "add" || pModal?.productId) && (
         <ProductModal
           product={pModal === "add" ? null : pModal}
@@ -1020,6 +1031,92 @@ export default function AdminPanel() {
       )}
 
       {sideOpen && <div className="sb-overlay" onClick={() => setSideOpen(false)} />}
+    </div>
+  );
+}
+
+// ─── DASHBOARD SUB-COMPONENTS (with own pagination) ─────────────────────────
+function DashLowStock({ lowStock, onViewAll }) {
+  const [page, setPage] = useState(1);
+  const [sortAsc, setSortAsc] = useState(true); // true = lowest stock first
+
+  const sorted = [...lowStock].sort((a, b) =>
+    sortAsc ? a.stockQuantity - b.stockQuantity : b.stockQuantity - a.stockQuantity
+  );
+  const paged = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleSort = () => {
+    setSortAsc(p => !p);
+    setPage(1); // reset to page 1 on sort change
+  };
+
+  return (
+    <div className="dash-card">
+      <div className="dash-card-hd">
+        <h3>⚠ Low Stock Alert</h3>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+          <button
+            className="ls-sort-btn"
+            onClick={handleSort}
+            title={sortAsc ? "Currently: lowest stock first. Click for highest first." : "Currently: highest stock first. Click for lowest first."}
+          >
+            Stock {sortAsc ? "↑" : "↓"}
+          </button>
+          <button className="link-btn" onClick={onViewAll}>View All →</button>
+        </div>
+      </div>
+      {lowStock.length === 0
+        ? <div className="dash-empty">All products well-stocked ✓</div>
+        : <>
+            <div className="ls-list">
+              {paged.map((p) => (
+                <div key={p.productId} className="ls-item">
+                  <div className="ls-left">
+                    {p.imageUrl
+                      ? <img src={p.imageUrl} alt="" className="ls-thumb" onError={(e) => e.target.style.display = "none"} />
+                      : <div className="ls-thumb-ph">{p.name?.[0]}</div>}
+                    <span className="ls-name">{p.name}</span>
+                  </div>
+                  <span className={`ls-qty ${p.stockQuantity <= 3 ? "ls-danger" : "ls-warn"}`}>
+                    {p.stockQuantity} left
+                  </span>
+                </div>
+              ))}
+            </div>
+            <Pagination page={page} total={lowStock.length} onChange={setPage} />
+          </>
+      }
+    </div>
+  );
+}
+
+function DashRecentOrders({ orders, onViewAll, onOpenOrder }) {
+  const [page, setPage] = useState(1);
+  const paged = orders.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  return (
+    <div className="dash-card">
+      <div className="dash-card-hd">
+        <h3>📦 Recent Orders</h3>
+        <button className="link-btn" onClick={onViewAll}>View All →</button>
+      </div>
+      {orders.length === 0
+        ? <div className="dash-empty">No orders yet</div>
+        : <>
+            {paged.map((o) => (
+              <div key={o.orderId} className="ro-item" onClick={() => onOpenOrder(o)}>
+                <div className="ro-left">
+                  <div className="ro-num">#{o.orderNumber}</div>
+                  <div className="ro-cust">{o.shippingName || o.customerName || "—"}</div>
+                </div>
+                <div className="ro-right">
+                  <span className={`status-bdg ${STATUS_CLS[o.status]}`}>{o.status}</span>
+                  <div className="ro-amt">{fmt(o.finalAmount)}</div>
+                </div>
+              </div>
+            ))}
+            <Pagination page={page} total={orders.length} onChange={setPage} />
+          </>
+      }
     </div>
   );
 }

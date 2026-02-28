@@ -94,12 +94,19 @@ const Checkout = () => {
     if (formErrors[name]) setFormErrors(prev => ({ ...prev, [name]: '' }));
   };
 
+  // ── FIX: These must exactly match OrderService calculations ──
+  // subtotal = sum of (price × qty)
   const calculateSubtotal = () => {
     if (buyNowProduct) return parseFloat(buyNowProduct.price) * buyNowQuantity;
     return parseFloat(cartData?.totalAmount || 0);
   };
-  const calculateTax = () => calculateSubtotal() * 0.08;
-  const calculateFinalTotal = () => calculateSubtotal() + calculateTax();
+  // tax = subtotal × 8%  (matches TAX_RATE in OrderService)
+  const calculateTax = () => Math.round(calculateSubtotal() * 0.08 * 100) / 100;
+  // shipping is always free (matches calcShippingFee in OrderService)
+  const calculateShipping = () => 0;
+  // final = subtotal + tax + shipping
+  const calculateFinalTotal = () =>
+    Math.round((calculateSubtotal() + calculateTax() + calculateShipping()) * 100) / 100;
 
   const loadRazorpayScript = () => new Promise((resolve) => {
     if (window.Razorpay) { resolve(true); return; }
@@ -122,10 +129,7 @@ const Checkout = () => {
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          paymentMethod: 'COD'
-        })
+        body: JSON.stringify({ ...formData, paymentMethod: 'COD' })
       });
 
       if (!response.ok) {
@@ -136,7 +140,11 @@ const Checkout = () => {
       const result = await response.json();
       showToast('Order placed successfully! Pay on delivery.', 'success');
       setTimeout(() => navigate('/order-success', {
-        state: { orderNumber: result.orderNumber || result.order_number, orderId: result.orderId || result.order_id, paymentMethod: 'COD' }
+        state: {
+          orderNumber: result.orderNumber || result.order_number,
+          orderId: result.orderId || result.order_id,
+          paymentMethod: 'COD'
+        }
       }), 1500);
     } catch (err) {
       setError(err.message);
@@ -169,17 +177,28 @@ const Checkout = () => {
       }
 
       const orderData = await createOrderResponse.json();
+
+      // ── FIX: amount from backend is already in paise (INR), use as-is ──
       const options = {
         key: orderData.razorpay_key_id,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: 'Maison Dorée Bakery',
+        amount: orderData.amount,           // paise from backend (e.g. 10800 = ₹108)
+        currency: orderData.currency,       // "INR" from backend
+        name: 'Maison Doree Bakery',
         description: `Order #${orderData.order_number}`,
         order_id: orderData.razorpay_order_id,
-        prefill: { name: orderData.customer_name, email: orderData.customer_email, contact: orderData.customer_phone },
+        prefill: {
+          name: orderData.customer_name,
+          email: orderData.customer_email,
+          contact: orderData.customer_phone
+        },
         theme: { color: '#8B4513' },
         handler: async function (response) { await verifyPayment(response); },
-        modal: { ondismiss: function () { setProcessing(false); showToast('Payment cancelled', 'info'); } }
+        modal: {
+          ondismiss: function () {
+            setProcessing(false);
+            showToast('Payment cancelled', 'info');
+          }
+        }
       };
       const razorpay = new window.Razorpay(options);
       razorpay.open();
@@ -215,7 +234,11 @@ const Checkout = () => {
       if (result.success) {
         showToast('Payment successful! Order placed.', 'success');
         setTimeout(() => navigate('/order-success', {
-          state: { orderNumber: result.orderNumber, orderId: result.orderId, paymentMethod: 'RAZORPAY' }
+          state: {
+            orderNumber: result.orderNumber,
+            orderId: result.orderId,
+            paymentMethod: 'RAZORPAY'
+          }
         }), 1500);
       } else throw new Error(result.message || 'Payment verification failed');
     } catch (err) {
@@ -239,8 +262,15 @@ const Checkout = () => {
     setTimeout(() => toast.remove(), 3500);
   };
 
-  const formatPrice = (price) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(price || 0);
+  // ── FIX: Use INR (₹) to match backend and Razorpay ──
+  const formatPrice = (price) => {
+    const numPrice = typeof price === 'string' ? parseFloat(price) : (price || 0);
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2
+    }).format(numPrice);
+  };
 
   const items = buyNowProduct
     ? [{ ...buyNowProduct, quantity: buyNowQuantity, subtotal: buyNowProduct.price * buyNowQuantity }]
@@ -272,7 +302,7 @@ const Checkout = () => {
           </button>
 
           <div className="co-brand">
-            <span className="co-brand-name">Maison Dorée</span>
+            <span className="co-brand-name">Maison Doree</span>
             <span className="co-brand-sub">Artisan Bakery · Secure Checkout</span>
           </div>
 
@@ -611,7 +641,7 @@ const Checkout = () => {
               {/* Selected payment indicator */}
               <div className="co-selected-payment">
                 {paymentMethod === 'COD'
-                  ? <><Banknote size={15} /> Pay ₹{calculateFinalTotal().toFixed(2)} on delivery</>
+                  ? <><Banknote size={15} /> Pay {formatPrice(calculateFinalTotal())} on delivery</>
                   : <><CreditCard size={15} /> Pay securely via Razorpay</>
                 }
               </div>

@@ -19,9 +19,9 @@ const QuickViewModal = ({ product, onClose, onAddToCart, addingToCart }) => {
   if (!product) return null;
 
   const formatPrice = (price) => {
-    if (!price && price !== 0) return '$0.00';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency', currency: 'USD', minimumFractionDigits: 2
+    if (!price && price !== 0) return '₹0.00';
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency', currency: 'INR', minimumFractionDigits: 2
     }).format(price);
   };
 

@@ -665,3 +665,121 @@ input, select, textarea { font-family: inherit; font-size: 0.9rem; }
   .breakdown-grid { grid-template-columns: 1fr 1fr; }
   .ord-two-col { grid-template-columns: 1fr; }
 }
+
+
+
+
+/* ─── PAGINATION ─────────────────────────────────────────────────────────────
+   Add these rules to your existing Adminpanel.css
+────────────────────────────────────────────────────────────────────────────── */
+
+.ap-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(139, 90, 43, 0.12);
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background: rgba(253, 248, 240, 0.6);
+  border-radius: 0 0 12px 12px;
+}
+
+.pag-info {
+  font-size: 0.82rem;
+  color: #9a7060;
+  font-weight: 500;
+}
+
+.pag-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pag-btn {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 0.6rem;
+  border-radius: 8px;
+  border: 1.5px solid rgba(139, 90, 43, 0.18);
+  background: white;
+  color: #3d2010;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pag-btn:hover:not(:disabled):not(.pag-active) {
+  border-color: #8B4513;
+  color: #8B4513;
+  background: rgba(139, 69, 19, 0.06);
+}
+
+.pag-btn.pag-active {
+  background: linear-gradient(135deg, #7a3a10, #9c4a1a);
+  border-color: #7a3a10;
+  color: white;
+  box-shadow: 0 3px 10px rgba(122, 58, 16, 0.28);
+}
+
+.pag-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: rgba(139, 90, 43, 0.1);
+}
+
+.pag-ellipsis {
+  padding: 0 0.3rem;
+  color: #9a7060;
+  font-size: 0.9rem;
+  user-select: none;
+}
+
+/* Compact pagination inside dashboard cards */
+.dash-card .ap-pagination {
+  padding: 0.75rem 0;
+  border-top: 1px dashed rgba(139, 90, 43, 0.15);
+  background: transparent;
+  border-radius: 0;
+  margin-top: 0.5rem;
+}
+
+.dash-card .pag-btn {
+  min-width: 30px;
+  height: 30px;
+  font-size: 0.8rem;
+}
+
+.dash-card .pag-info {
+  font-size: 0.76rem;
+}
+
+/* ─── Revenue KPI excluded hint ─────────────────────────────────────────── */
+.kpi-excluded {
+  color: #f97316;
+  font-weight: 600;
+}
+
+/* ─── Low Stock Sort Button ─────────────────────────────────────────────── */
+.ls-sort-btn {
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+  border: 1.5px solid rgba(139, 90, 43, 0.22);
+  background: white;
+  color: #7a3a10;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.ls-sort-btn:hover {
+  background: rgba(122, 58, 16, 0.08);
+  border-color: #7a3a10;
+}

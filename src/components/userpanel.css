@@ -315,11 +315,12 @@ body {
   margin: 3rem 5%; border-radius: var(--r-xl); overflow: hidden;
   position: relative;
   background: linear-gradient(135deg, #2C1810, #4a2010);
-  min-height: 480px; display: flex; align-items: center;
+  
+  min-height: 500px; display: flex; align-items: center;
   box-shadow: 0 24px 48px rgba(0,0,0,0.22);
 }
 .hero-offer-banner .hero-banner-content {
-  flex:1; padding: 4rem; position: relative; z-index: 2; max-width: 580px;
+ flex:1; padding: 2.5rem 3rem; position: relative; z-index: 2; max-width: 580px;
 }
 .hero-offer-banner .hero-badge {
   display: inline-block; background: rgba(255,255,255,0.12); backdrop-filter: blur(10px);
@@ -363,12 +364,6 @@ body {
   box-shadow: 0 10px 24px rgba(201,150,58,0.35);
 }
 .hero-offer-banner .hero-btn:hover { transform: translateY(-3px) scale(1.04); box-shadow: 0 16px 36px rgba(201,150,58,0.45); }
-.hero-offer-banner .hero-image { flex:1; height: 480px; position: relative; overflow: hidden; }
-.hero-offer-banner .hero-image img { width:100%; height:100%; object-fit: cover; animation: zoomIn 20s infinite alternate; }
-.hero-offer-banner .hero-image::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(90deg, rgba(44,24,16,0.82) 0%, transparent 100%); z-index: 1;
-}
 .hero-offer-banner .floating-elements { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
 .hero-offer-banner .floating-item { position: absolute; font-size: 3rem; animation: float 6s ease-in-out infinite; opacity: 0.55; }
 .hero-offer-banner .floating-item:nth-child(1) { top:20%; right:15%; animation-delay: 0s; }
@@ -423,7 +418,7 @@ body {
 .category-card.active .category-count { background: rgba(255,255,255,0.3); }
 
 /* ═══════════════════════════════════════════════════════════════
-   FILTERS SIDEBAR — from File 2
+   FILTERS SIDEBAR
 ═══════════════════════════════════════════════════════════════ */
 .filters-sidebar {
   position: fixed;
@@ -610,7 +605,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   PRODUCTS SECTION — from File 1
+   PRODUCTS SECTION
 ═══════════════════════════════════════════════════════════════ */
 .products-section { padding: 3rem 5%; }
 .products-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
@@ -701,7 +696,7 @@ body {
   z-index: 2;
 }
 
-/* ── Favourite Button — from File 1 ── */
+/* ── Favourite Button ── */
 .favourite-btn {
   position: absolute;
   top: 1rem; right: 1rem;
@@ -722,7 +717,7 @@ body {
   transform: scale(1.1);
 }
 
-/* ── Quick View Overlay — from File 1 ── */
+/* ── Quick View Overlay ── */
 .quick-view-overlay {
   position: absolute;
   bottom: 0; left: 0; right: 0;
@@ -1057,8 +1052,6 @@ body {
   .hero-offer-banner { flex-direction: column; min-height: auto; }
   .hero-offer-banner .hero-banner-content { padding: 3rem; max-width: 100%; text-align: center; }
   .hero-offer-banner .hero-countdown { justify-content: center; }
-  .hero-offer-banner .hero-image { width: 100%; height: 380px; }
-  .hero-offer-banner .hero-image::before { background: linear-gradient(0deg, rgba(44,24,16,0.8) 0%, transparent 100%); }
   .trust-strip { flex-wrap: wrap; justify-content: flex-start; }
   .trust-divider { display: none; }
   .trust-item { min-width: 45%; }
@@ -1135,4 +1128,134 @@ body {
   .product-price { font-size: 1.1rem; }
   .add-to-cart-btn span { display: none; }
   .add-to-cart-btn { padding: 0.6rem; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   OFFER CAROUSEL
+═══════════════════════════════════════════════════════════════ */
+
+.offer-carousel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 62%;               /* takes right portion of the banner */
+  overflow: hidden;
+}
+
+/* Every slide — stacked absolutely, invisible by default */
+.offer-carousel__slide {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.65s ease;
+  pointer-events: none;
+}
+
+/* Only the active slide is visible */
+.offer-carousel__slide.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.offer-carousel__slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+}
+
+.offer-carousel__slide img{
+  transition: transform 0.6s ease;
+}
+.offer-carousel__slide img:hover{
+  transform: scale(1.12);
+}
+
+/* Left-edge gradient that blends carousel into the dark banner text area */
+.offer-carousel__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(44,24,16,0.85) 0%, transparent 42%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Prev / Next arrow buttons */
+.offer-carousel__ctrl {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  z-index: 4;
+  transition: background 0.2s, transform 0.2s;
+}
+.offer-carousel__ctrl:hover {
+  background: rgba(255,255,255,0.35);
+  transform: translateY(-50%) scale(1.1);
+}
+.offer-carousel__ctrl--prev { left: 14px; }
+.offer-carousel__ctrl--next { right: 14px; }
+
+/* Dot indicators */
+.offer-carousel__dots {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 4;
+}
+.offer-carousel__dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s, width 0.3s, border-radius 0.3s;
+}
+.offer-carousel__dot.active {
+  background: #fff;
+  width: 24px;
+  border-radius: 4px;
+}
+
+/* ── Mobile: stack the carousel below the text content ── */
+@media (max-width: 992px) {
+  .hero-offer-banner {
+    flex-direction: column; min-height: auto; padding-bottom: 380px;
+  }
+  .offer-carousel {
+    position: absolute;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 380px;
+  }
+  /* On mobile the overlay should fade from the bottom, not the left */
+  .offer-carousel__overlay {
+    background: linear-gradient(0deg, rgba(44,24,16,0.8) 0%, transparent 55%);
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-offer-banner {
+    padding-bottom: 260px;
+  }
+  .offer-carousel {
+    height: 260px;
+  }
 }

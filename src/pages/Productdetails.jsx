@@ -211,9 +211,10 @@ const ProductDetails = () => {
     setTimeout(() => toast.remove(), 3000);
   };
 
+  // ── FIX: INR currency ──
   const formatPrice = (price) => {
-    if (!price && price !== 0) return '$0.00';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
+    if (!price && price !== 0) return '₹0.00';
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(price);
   };
 
   const getFallbackImage = () => 'https://placehold.co/800x800/8B4513/FFFFFF?text=Product';
@@ -432,7 +433,7 @@ const ProductDetails = () => {
           <div className="pd-trust-badges">
             <div className="pd-badge">
               <Truck size={20} />
-              <div><strong>Free Delivery</strong><span>On orders over $50</span></div>
+              <div><strong>Free Delivery</strong><span>On all orders</span></div>
             </div>
             <div className="pd-badge">
               <Shield size={20} />
