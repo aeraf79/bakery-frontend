@@ -1,3 +1,5 @@
+import API_BASE_URL from "../config";
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -39,7 +41,7 @@ const Checkout = () => {
   const loadUserProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/users/profile', {
+      const response = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/users/profile', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -53,7 +55,7 @@ const Checkout = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/cart', {
+      const response = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/cart', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) {
@@ -123,8 +125,8 @@ const Checkout = () => {
     setProcessing(true); setError('');
     try {
       const token = localStorage.getItem('token');
-      let url = 'http://localhost:8080/api/orders/cod';
-      if (buyNowProduct) url = `http://localhost:8080/api/orders/cod/buy-now?productId=${buyNowProduct.productId}&quantity=${buyNowQuantity}`;
+      let url = 'https://bakery-backend-production-2dfd.up.railway.app/api/orders/cod';
+      if (buyNowProduct) url = `https://bakery-backend-production-2dfd.up.railway.app/api/orders/cod/buy-now?productId=${buyNowProduct.productId}&quantity=${buyNowQuantity}`;
 
       const response = await fetch(url, {
         method: 'POST',
@@ -163,8 +165,8 @@ const Checkout = () => {
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) throw new Error('Failed to load Razorpay. Please check your connection.');
 
-      let createOrderUrl = 'http://localhost:8080/api/payment/create-order';
-      if (buyNowProduct) createOrderUrl = `http://localhost:8080/api/payment/create-order/buy-now?productId=${buyNowProduct.productId}&quantity=${buyNowQuantity}`;
+      let createOrderUrl = 'https://bakery-backend-production-2dfd.up.railway.app/api/payment/create-order';
+      if (buyNowProduct) createOrderUrl = `https://bakery-backend-production-2dfd.up.railway.app/api/payment/create-order/buy-now?productId=${buyNowProduct.productId}&quantity=${buyNowQuantity}`;
 
       const createOrderResponse = await fetch(createOrderUrl, {
         method: 'POST',
@@ -217,7 +219,7 @@ const Checkout = () => {
   const verifyPayment = async (razorpayResponse) => {
     try {
       const token = localStorage.getItem('token');
-      const verifyResponse = await fetch('http://localhost:8080/api/payment/verify', {
+      const verifyResponse = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/payment/verify', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({

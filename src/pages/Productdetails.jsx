@@ -1,3 +1,5 @@
+import API_BASE_URL from "../config";
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -84,7 +86,7 @@ const ProductDetails = () => {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const response = await fetch(`http://localhost:8080/api/products/${productId}`, { headers });
+      const response = await fetch(`https://bakery-backend-production-2dfd.up.railway.app/api/products/${productId}`, { headers });
       if (!response.ok) throw new Error('Failed to fetch product');
 
       const data = await response.json();
@@ -99,7 +101,7 @@ const ProductDetails = () => {
 
   const fetchSimilarProducts = async (category, excludeId) => {
     try {
-      const response = await fetch('http://localhost:8080/api/products/all');
+      const response = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/products/all');
       if (!response.ok) return;
       const allProducts = await response.json();
       const similar = allProducts
@@ -113,7 +115,7 @@ const ProductDetails = () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      const res = await fetch('http://localhost:8080/api/favourites/ids', {
+      const res = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/favourites/ids', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -130,7 +132,7 @@ const ProductDetails = () => {
     setTogglingFav(true);
     setIsFavourited(!isFavourited);
     try {
-      const res = await fetch(`http://localhost:8080/api/favourites/toggle/${productId}`, {
+      const res = await fetch(`https://bakery-backend-production-2dfd.up.railway.app/api/favourites/toggle/${productId}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -155,7 +157,7 @@ const ProductDetails = () => {
     if (!token) { navigate('/login'); return; }
     setAddingToCart(true);
     try {
-      const response = await fetch('http://localhost:8080/api/cart/add', {
+      const response = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/cart/add', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId: product.productId, quantity })

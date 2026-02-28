@@ -1,3 +1,5 @@
+import API_BASE_URL from "../config";
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -53,7 +55,7 @@ const Profile = () => {
     }
 
     // userId missing in localStorage (old login session) → fetch from backend
-    fetch('http://localhost:8080/api/users/profile', {
+    fetch('https://bakery-backend-production-2dfd.up.railway.app/api/users/profile', {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => {
@@ -132,7 +134,7 @@ const Profile = () => {
       }
 
       const response = await fetch(
-        `http://localhost:8080/api/users/patch/${userData.userId}`,
+        `https://bakery-backend-production-2dfd.up.railway.app/api/users/patch/${userData.userId}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },

@@ -1,3 +1,5 @@
+import API_BASE_URL from "../config";
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, User, Mail, Phone, Lock, ArrowRight, X, Check, Sparkles, ChefHat, Coffee, Croissant } from 'lucide-react';
@@ -140,7 +142,7 @@ const Register = () => {
     setApiError('');
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/register', {
+      const response = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, role: 'USER' })

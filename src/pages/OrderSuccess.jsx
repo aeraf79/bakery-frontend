@@ -1,3 +1,5 @@
+import API_BASE_URL from "../config";
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -60,7 +62,7 @@ export default function OrderSuccess() {
   const fetchOrderDetails = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res   = await fetch(`http://localhost:8080/api/orders/${orderId}`, {
+      const res   = await fetch(`https://bakery-backend-production-2dfd.up.railway.app/api/orders/${orderId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) setOrderDetails(await res.json());

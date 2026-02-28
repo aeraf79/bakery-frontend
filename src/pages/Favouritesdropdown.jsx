@@ -1,3 +1,5 @@
+import API_BASE_URL from "../config";
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, X, ShoppingCart, Loader, Package } from 'lucide-react';
@@ -46,7 +48,7 @@ const FavouritesDropdown = ({ onAction, favouritedIds = new Set(), onCountChange
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/favourites', {
+      const res = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/favourites', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -65,7 +67,7 @@ const FavouritesDropdown = ({ onAction, favouritedIds = new Set(), onCountChange
     setRemovingId(favouriteId);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/favourites/${favouriteId}`, {
+      const res = await fetch(`https://bakery-backend-production-2dfd.up.railway.app/api/favourites/${favouriteId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });

@@ -1,3 +1,5 @@
+import API_BASE_URL from "../config";
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -34,7 +36,7 @@ const Cart = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:8080/api/cart', {
+      const response = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/cart', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -73,7 +75,7 @@ const Cart = () => {
       const token = localStorage.getItem('token');
 
       const response = await fetch(
-        `http://localhost:8080/api/cart/items/${cartItemId}?quantity=${newQuantity}`,
+        `https://bakery-backend-production-2dfd.up.railway.app/api/cart/items/${cartItemId}?quantity=${newQuantity}`,
         {
           method: 'PUT',
           headers: {
@@ -116,7 +118,7 @@ const Cart = () => {
       const token = localStorage.getItem('token');
 
       const response = await fetch(
-        `http://localhost:8080/api/cart/items/${cartItemId}`,
+        `https://bakery-backend-production-2dfd.up.railway.app/api/cart/items/${cartItemId}`,
         {
           method: 'DELETE',
           headers: {
@@ -157,7 +159,7 @@ const Cart = () => {
     try {
       const token = localStorage.getItem('token');
 
-      const response = await fetch('http://localhost:8080/api/cart/clear', {
+      const response = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/cart/clear', {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

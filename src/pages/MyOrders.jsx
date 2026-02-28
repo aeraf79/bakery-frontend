@@ -1,3 +1,5 @@
+import API_BASE_URL from "../config";
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -349,7 +351,7 @@ const MyOrders = () => {
     setLoading(true); setError('');
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/orders', {
+      const res = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/orders', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) {
@@ -371,7 +373,7 @@ const MyOrders = () => {
     setCancellingId(orderId);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/orders/${orderId}/cancel`, {
+      const res = await fetch(`https://bakery-backend-production-2dfd.up.railway.app/api/orders/${orderId}/cancel`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

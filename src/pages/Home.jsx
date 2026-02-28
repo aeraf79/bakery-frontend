@@ -1,3 +1,5 @@
+import API_BASE_URL from "../config";
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -222,7 +224,7 @@ const HomePage = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res  = await fetch('http://localhost:8080/api/products/available');
+        const res  = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/products/available');
         if (!res.ok) throw new Error(`Server error ${res.status}`);
         const data = await res.json();
         setProducts(Array.isArray(data) ? data : []);

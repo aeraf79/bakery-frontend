@@ -1,3 +1,5 @@
+import API_BASE_URL from "../config";
+
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -224,7 +226,7 @@ const UserPanel = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-      const res = await fetch("http://localhost:8080/api/favourites/ids", {
+      const res = await fetch("https://bakery-backend-production-2dfd.up.railway.app/api/favourites/ids", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) setFavouritedIds(new Set(await res.json()));
@@ -243,7 +245,7 @@ const UserPanel = () => {
       return next;
     });
     try {
-      const res = await fetch(`http://localhost:8080/api/favourites/toggle/${product.productId}`, {
+      const res = await fetch(`https://bakery-backend-production-2dfd.up.railway.app/api/favourites/toggle/${product.productId}`, {
         method: "POST", headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
@@ -282,7 +284,7 @@ const UserPanel = () => {
       const token = localStorage.getItem("token");
       const headers = { "Content-Type": "application/json", Accept: "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
-      const response = await fetch("http://localhost:8080/api/products/all", { method: "GET", headers });
+      const response = await fetch("https://bakery-backend-production-2dfd.up.railway.app/api/products/all", { method: "GET", headers });
       setApiStatus(`Server responded: ${response.status}`);
       if (!response.ok) {
         if (response.status === 401) { localStorage.removeItem("token"); localStorage.removeItem("user"); setTimeout(() => navigate("/login"), 2000); throw new Error("Session expired."); }
@@ -307,7 +309,7 @@ const UserPanel = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-      const res = await fetch("http://localhost:8080/api/cart/count", {
+      const res = await fetch("https://bakery-backend-production-2dfd.up.railway.app/api/cart/count", {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       });
       if (res.ok) { const d = await res.json(); setCartCount(d.count ?? 0); }
@@ -370,7 +372,7 @@ const UserPanel = () => {
     if (!token) { showToast("Please login to add items to cart", "error"); navigate("/login"); return; }
     setAddingToCart(p => ({ ...p, [product.productId]: true }));
     try {
-      const res = await fetch("http://localhost:8080/api/cart/add", {
+      const res = await fetch("https://bakery-backend-production-2dfd.up.railway.app/api/cart/add", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ productId: product.productId, quantity }),
@@ -392,7 +394,7 @@ const UserPanel = () => {
     const token = localStorage.getItem("token");
     if (!token) { showToast("Please login to add items to cart", "error"); navigate("/login"); setQuickViewAdding(false); return; }
     try {
-      const res = await fetch("http://localhost:8080/api/cart/add", {
+      const res = await fetch("https://bakery-backend-production-2dfd.up.railway.app/api/cart/add", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ productId: product.productId, quantity }),

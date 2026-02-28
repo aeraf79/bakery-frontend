@@ -1,3 +1,5 @@
+import API_BASE_URL from "../config";
+
 import React, { useEffect } from 'react';
 import { X, Star, ShoppingCart, Plus, Minus, Package } from 'lucide-react';
 import './Quickviewmodal.css';

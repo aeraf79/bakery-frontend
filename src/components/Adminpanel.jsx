@@ -2,8 +2,13 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Adminpanel.css";
 
+import API_BASE_URL from "../config";
+const API = API_BASE_URL;
+
+
+
 // ─── API ────────────────────────────────────────────────────────────────────
-const API = "http://localhost:8080/api";
+
 const hdr = () => ({
   "Content-Type": "application/json",
   Authorization: `Bearer ${localStorage.getItem("token")}`,

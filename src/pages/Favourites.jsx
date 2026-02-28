@@ -1,3 +1,5 @@
+import API_BASE_URL from "../config";
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -27,7 +29,7 @@ const Favourites = () => {
     setError('');
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/favourites', {
+      const res = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/favourites', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) {
@@ -47,7 +49,7 @@ const Favourites = () => {
     setRemovingId(favouriteId);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/favourites/${favouriteId}`, {
+      const res = await fetch(`https://bakery-backend-production-2dfd.up.railway.app/api/favourites/${favouriteId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -66,7 +68,7 @@ const Favourites = () => {
     if (!window.confirm('Remove all favourites?')) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:8080/api/favourites/clear', {
+      const res = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/favourites/clear', {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -86,7 +88,7 @@ const Favourites = () => {
 
     setAddingToCart(prev => ({ ...prev, [fav.productId]: true }));
     try {
-      const res = await fetch('http://localhost:8080/api/cart/add', {
+      const res = await fetch('https://bakery-backend-production-2dfd.up.railway.app/api/cart/add', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId: fav.productId, quantity: 1 })
